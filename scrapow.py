@@ -1,7 +1,6 @@
-# Scrapow: One of the best Web/Dark Web scraping tool
 # Author: Pratyaksha Beri
 # Github: https://github.com/Shad0wMazt3r
-# Version: 1.0
+# Version: 2.0
 import requests
 import os
 import bs4
@@ -10,6 +9,8 @@ from urllib.request import urlopen as uReq
 import re
 import pickle
 import time
+import socket
+import subprocess
 # Setting the Logo and printing it
 logo = """ 
  ___   ___  ____    __    ____  _____  _    _ 
@@ -25,10 +26,61 @@ def website_url_formatting(website):
     # This function formats the URL and sets up the proxy
     # .onion websites can be accessed at clear net by adding .ws at the end of the url
     # .onion.ws is a proxy which allows you to access dark web without connecting to it via tor
+    if website.endswith("/"):
+        website = website[:-1]
     if website.endswith(".ws"):
         pass
     elif website.endswith(".onion"):
-        website = website+".ws"
+        scrape_command = "curl --socks5 localhost:9050 --socks5-hostname localhost:9050 -s "+website
+        r = subprocess.check_output(scrape_command, shell=True)
+        print(r)
+        page_soup = soup(r, "html.parser")
+        # Getting title of the website
+        title = page_soup.title
+        title = str(title)
+        # Removing the Title tags to just get the Main title
+        # for example: <title>Hello World</title>
+        # would get reduced to "Hello World"
+        title = title.replace("<title>", "")
+        title = title.replace("</title>", "")
+        # Exracting the description of the webpage
+        desc = page_soup.description
+        desc = str(desc)
+        #checks if title and/or description is empty
+        if title == "":
+            print("No Title Could Be Found!")
+        else:
+            print(title)
+        if desc == "None":
+            print("No Description Could Be Found!")
+        else:
+            print(desc)
+        # Finds all urls
+        urls = re.findall(b'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', r)
+        # saves urls to links.txt
+        with open('links.txt', mode="w+") as file_object:
+            print(*urls , sep="\n", file=file_object)
+        # uses pickle to save file as CSV file
+        with open('list.csv', 'wb') as filehandle:
+            pickle.dump(urls, filehandle)
+        print("Links saved to links.txt and to list.csv")
+        # tries Checks for website's purpose by finding certain keywords in text
+        if "search" in r:
+            print("Search engine")
+        else:
+            pass
+        if "buy" in r:
+            print("Selling")
+        else:
+            pass
+        if "hacking" in r:
+            print("Hacking")
+        else:
+            pass
+        if "hire" in r:
+            print("Hiring services")
+        else:
+            pass
     if website.startswith("http://") or website.startswith("https://"):
         pass
     if not website.startswith("https://") or not website.startswith("http://"):
@@ -73,9 +125,6 @@ def scrape(website):
         else:
             print(desc)
         # Finds all urls
-        # Honestly it is an Regular Expression. It is very confusing to me
-        # So if you want an update to this, then make a Regular expression to suit your needs
-        # and I will update it for you
         urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', r.text)
         # saves urls to links.txt
         print(*urls , sep="\n", file=file_object)
@@ -128,14 +177,6 @@ def autoscan(website):
             exit()
     wait()
     clear()
-    # Nmapping the website's OS and grepping the Host to remove all the extra stuff
-    # cmd4 = ('nmap -O '+website+' | grep Host')
-    # os.system(cmd4)
-    # wait()
-    # clear()
-    # removed the nmapping for checking the status.
-    # felt like it is quite unneccesary
-    # Doing the same with the OS
     cmd5 = ('nmap -O '+website+' | grep OS')
     os.system(cmd5)
     wait()
@@ -151,9 +192,6 @@ def autoscan(website):
     clear()
     cmd8 = ('whois '+website)
     os.system(cmd8)
-# Honestly the scan can be done on any website but kali has all the tools
-# If I wouldnt have mentioned kali, people would have opened tons of issues regarding
-# the errors they were getting
 scan = input("Would You Like to Do a basic scan (y/n)? (Kali Linux only) (Clearnet Sites only) :")   
 if scan =="y":
     autoscan(website)
