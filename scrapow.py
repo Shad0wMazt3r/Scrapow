@@ -33,7 +33,8 @@ def website_url_formatting(website):
     elif website.endswith(".onion"):
         scrape_command = "curl --socks5 localhost:9050 --socks5-hostname localhost:9050 -s "+website
         r = subprocess.check_output(scrape_command, shell=True)
-        print(r)
+        # print(r)
+        source = r.decode()
         page_soup = soup(r, "html.parser")
         # Getting title of the website
         title = page_soup.title
@@ -65,19 +66,19 @@ def website_url_formatting(website):
             pickle.dump(urls, filehandle)
         print("Links saved to links.txt and to list.csv")
         # tries Checks for website's purpose by finding certain keywords in text
-        if "search" in r:
+        if "search" in source:
             print("Search engine")
         else:
             pass
-        if "buy" in r:
+        if "buy" in source:
             print("Selling")
         else:
             pass
-        if "hacking" in r:
+        if "hacking" in source:
             print("Hacking")
         else:
             pass
-        if "hire" in r:
+        if "hire" in source:
             print("Hiring services")
         else:
             pass
